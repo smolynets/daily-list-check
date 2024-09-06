@@ -43,11 +43,9 @@ email_subject = "Child check"
 smtp_server = 'smtp.gmail.com'
 smtp_port = 587
 
-to_email = "smolynets@gmail.com"
-# "oksana.mavdryk25@gmail.com>"
+to_emails = ["smolynets@gmail.com", "oksana.mavdryk25@gmail.com"]
 from_email = "smolynets2@gmail.com"
-# email_app_password = os.getenv("EMAIL_APP_PASSWORD")
-email_app_password = "ayfj apks ygvq uyue "
+email_app_password = os.getenv("EMAIL_APP_PASSWORD")
 
 def send_html_email(email_subject, to_email, from_email, email_app_password, region_messages):
     email_html_body = f"""
@@ -64,8 +62,6 @@ def send_html_email(email_subject, to_email, from_email, email_app_password, reg
         </body>
         </html>
     """
-
-    to_emails = ["smolynets@gmail.com", "oksana.mavdryk25@gmail.com"]
 
     # Create the MIME message
     message = MIMEMultipart()
