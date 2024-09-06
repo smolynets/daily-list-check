@@ -47,7 +47,7 @@ to_emails = ["smolynets@gmail.com", "oksana.mavdryk25@gmail.com"]
 from_email = "smolynets2@gmail.com"
 email_app_password = os.getenv("EMAIL_APP_PASSWORD")
 
-def send_html_email(email_subject, to_email, from_email, email_app_password, region_messages):
+def send_html_email(email_subject, to_emails, from_email, email_app_password, region_messages):
     email_html_body = f"""
     <html>
     <body>
@@ -108,7 +108,7 @@ def main(regions):
     else:
         region_messages = {"Всі області": "змін немає"}
 
-    send_html_email(email_subject, to_email, from_email, email_app_password, region_messages)
+    send_html_email(email_subject, to_emails, from_email, email_app_password, region_messages)
 
 
 if __name__ == '__main__':
