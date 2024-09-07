@@ -181,10 +181,6 @@ def main(regions):
             match = re.search(r'\d+', text)
             if match:
                 region_count = int(match.group(0))
-                print("179###########################")
-                print(region)
-                print(region_count)
-                print("179###########################")
             if region_count > data["expected_count"]:
                 email_messages[region] = f"кількість збільшилася на {region_count - data["expected_count"]}"
             if region_count < data["expected_count"]:
