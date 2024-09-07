@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import re
 
 
 regions = {
@@ -32,6 +33,82 @@ regions = {
     "рівненська": {
         "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D1%96%D0%B2%D0%BD%D0%B5%D0%BD%D1%81%D1%8C%D0%BA%D0%B0&brothers=no&needs=no&number=",
         "expected_count": 9
+    },
+    "віницька": {
+        "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D1%96%D0%BD%D0%BD%D0%B8%D1%86%D1%8C%D0%BA%D0%B0&brothers=no&needs=no&number=",
+        "expected_count": 4
+    },
+    "дніпропетровська": {
+        "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D0%BD%D1%96%D0%BF%D1%80%D0%BE%D0%BF%D0%B5%D1%82%D1%80%D0%BE%D0%B2%D1%81%D1%8C%D0%BA%D0%B0&brothers=no&needs=no&number=&page=6",
+        "expected_count": 71
+    },
+    "донецька": {
+        "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D0%BE%D0%BD%D0%B5%D1%86%D1%8C%D0%BA%D0%B0&brothers=no&needs=no&number=",
+        "expected_count": 27
+    },
+    "житомирська": {
+        "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D0%B8%D1%82%D0%BE%D0%BC%D0%B8%D1%80%D1%81%D1%8C%D0%BA%D0%B0&brothers=no&needs=no&number=",
+        "expected_count": 16
+    },
+    "запоріжська": {
+        "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D0%B0%D0%BF%D0%BE%D1%80%D1%96%D0%B7%D1%8C%D0%BA%D0%B0&brothers=no&needs=no&number=",
+        "expected_count": 22
+    },
+    "київська": {
+        "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D0%B8%D1%97%D0%B2%D1%81%D1%8C%D0%BA%D0%B0&brothers=no&needs=no&number=",
+        "expected_count": 21
+    },
+    "місто Київ": {
+        "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D0%BC.+%D0%9A%D0%B8%D1%97%D0%B2&brothers=no&needs=no&number=",
+        "expected_count": 20
+    },
+    "кіровоградська": {
+        "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D1%96%D1%80%D0%BE%D0%B2%D0%BE%D0%B3%D1%80%D0%B0%D0%B4%D1%81%D1%8C%D0%BA%D0%B0&brothers=no&needs=no&number=",
+        "expected_count": 19
+    },
+    "луганська": {
+        "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D1%83%D0%B3%D0%B0%D0%BD%D1%81%D1%8C%D0%BA%D0%B0&brothers=no&needs=no&number=",
+        "expected_count": 8
+    },
+    "миколаївська": {
+        "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D0%B8%D0%BA%D0%BE%D0%BB%D0%B0%D1%97%D0%B2%D1%81%D1%8C%D0%BA%D0%B0&brothers=no&needs=no&number=",
+        "expected_count": 10
+    },
+    "одеська": {
+        "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D0%B4%D0%B5%D1%81%D1%8C%D0%BA%D0%B0&brothers=no&needs=no&number=",
+        "expected_count": 61
+    },
+    "полтавська": {
+        "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D0%BE%D0%BB%D1%82%D0%B0%D0%B2%D1%81%D1%8C%D0%BA%D0%B0&brothers=no&needs=no&number=",
+        "expected_count": 19
+    },
+    "сумська": {
+        "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D1%83%D0%BC%D1%81%D1%8C%D0%BA%D0%B0&brothers=no&needs=no&number=",
+        "expected_count": 5
+    },
+    "харківська": {
+        "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D0%B0%D1%80%D0%BA%D1%96%D0%B2%D1%81%D1%8C%D0%BA%D0%B0&brothers=no&needs=no&number=",
+        "expected_count": 29
+    },
+    "херсонська": {
+        "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D0%B5%D1%80%D1%81%D0%BE%D0%BD%D1%81%D1%8C%D0%BA%D0%B0&brothers=no&needs=no&number=",
+        "expected_count": 9
+    },
+    "хмельницька": {
+        "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D0%BC%D0%B5%D0%BB%D1%8C%D0%BD%D0%B8%D1%86%D1%8C%D0%BA%D0%B0&brothers=no&needs=no&number=",
+        "expected_count": 11
+    },
+    "черкаська": {
+        "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D0%B5%D1%80%D0%BA%D0%B0%D1%81%D1%8C%D0%BA%D0%B0&brothers=no&needs=no&number=",
+        "expected_count": 7
+    },
+    "чернівецька": {
+        "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D0%B5%D1%80%D0%BD%D1%96%D0%B2%D0%B5%D1%86%D1%8C%D0%BA%D0%B0&brothers=no&needs=no&number=",
+        "expected_count": 0
+    },
+    "чернігівська": {
+        "url": "https://www.msp.gov.ua/children/search.php?form=%D0%9D%D0%B0%D1%86%D1%96%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B5+%D1%83%D1%81%D0%B8%D0%BD%D0%BE%D0%B2%D0%BB%D0%B5%D0%BD%D0%BD%D1%8F&male=*&age_from=0&age_to=10&region=%D0%B5%D1%80%D0%BD%D1%96%D0%B3%D1%96%D0%B2%D1%81%D1%8C%D0%BA%D0%B0&brothers=no&needs=no&number=",
+        "expected_count": 23
     }
 }
 
@@ -85,23 +162,33 @@ def main(regions):
         response = requests.get(data["url"])
         response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
-        child_items = soup.find_all('div', class_='child__item')
+        # child_items = soup.find_all('div', class_='child__item')
 
-        child_list = []
+        # child_list = []
 
-        for item in child_items:
-            url = item.find('a')['href']
-            parsed_url = urlparse(url)
-            query_params = parse_qs(parsed_url.query)
-            number = query_params.get('n', [None])[0]
-            child_list.append(number)
+        # for item in child_items:
+        #     url = item.find('a')['href']
+        #     parsed_url = urlparse(url)
+        #     query_params = parse_qs(parsed_url.query)
+        #     number = query_params.get('n', [None])[0]
+        #     child_list.append(number)
 
-        region_count = len(child_list)
-        print(f"{region}: {region_count}")
-        if region_count > data["expected_count"]:
-            email_messages[region] = f"кількість збільшилася на {region_count - data["expected_count"]}"
-        if region_count < data["expected_count"]:
-            email_messages[region] = f"кількість зменшилася на {data["expected_count"] - region_count}"
+        # region_count = len(child_list)
+        # print(f"{region}: {region_count}")
+        p_tag = soup.find('p', text=re.compile("За Вашим запитом знайдено"))
+        if p_tag:
+            text = p_tag.get_text()
+            match = re.search(r'\d+', text)
+            if match:
+                region_count = int(match.group(0))
+                print("179###########################")
+                print(region)
+                print(region_count)
+                print("179###########################")
+            if region_count > data["expected_count"]:
+                email_messages[region] = f"кількість збільшилася на {region_count - data["expected_count"]}"
+            if region_count < data["expected_count"]:
+                email_messages[region] = f"кількість зменшилася на {data["expected_count"] - region_count}"
 
     if email_messages:
         region_messages = email_messages
